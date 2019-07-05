@@ -20,8 +20,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="blog in blogs">
-                            <th scope="row">${blog.id}</th>
+                        <tr v-for="blog,key in blogs">
+                            <th scope="row">${key + 1}</th>
                             <td>${blog.title}</td>
                             <td>${blog.content}</td>
                             <td>
