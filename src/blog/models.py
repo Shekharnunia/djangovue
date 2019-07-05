@@ -5,10 +5,10 @@ from django.contrib.auth.models import User
 class Blog(models.Model):
     """This class will going to contain the blog database table data."""
 
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     title = models.CharField(max_length=50)
     content = models.TextField()
-    timestamp = models.DateTimeField(auto_now=False, auto_now_add=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         """Meta definition for Blog."""
