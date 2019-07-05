@@ -1,6 +1,203 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block content %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+{% endblock css %}
     
+{% block content %}
+    <div id="starting">
+        <div class="container">
+            <div class="row">
+                <h1><button class="btn btn-success" data-toggle="modal" data-target="#addBlogModal">Add Blog</button></h1>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">title</th>
+                            <th scope="col">content</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="blog in blogs">
+                            <th scope="row">${blog.id}</th>
+                            <td>${blog.title}</td>
+                            <td>${blog.content}</td>
+                            <td>
+                                <button class="btn btn-info" v-on:click="getBlog(blog.id)">Edit</button>
+                                <button class="btn btn-danger" v-on:click="deleteBlog(blog.id)">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="modal fade" id="addBlogModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="exampleModalLongTitle">ADD Blog</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                        <form v-on:submit.prevent="addBlog()">
+                        <div class="modal-body">
+                            <div class="form-group">
+                              <label for="title">Blog Heading</label>
+                              <input
+                                type="text"
+                                class="form-control"
+                                id="title"
+                                placeholder="Enter Blog Heading"
+                                v-model="newBlog.title"
+                                required="required" >
+                            </div>
+                            <div class="form-group">
+                              <label for="content">Blog Body</label>
+                              <textarea
+                                class="form-control"
+                                id="content"
+                                placeholder="Enter Blog Body"
+                                v-model="newBlog.content"
+                                required="required"
+                                rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                          <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                        </form>
+                      </div>
+                    </div>
+                   <div class="loading" v-if="loading===true">Loading&#8230;</div>          
+                  </div>
+
+                  <div class="modal fade" id="editBlogModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLongTitle">EDIT Blog</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form v-on:submit.prevent="updateBlog()">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="title">Blog Heading</label>
+                                <input
+                                type="text"
+                                class="form-control"
+                                id="title"
+                                placeholder="Enter Blog Heading"
+                                v-model="currentBlog.title"
+                                required="required" >
+                            </div>
+                            <div class="form-group">
+                                <label for="content">Blog Body</label>
+                                <textarea
+                                class="form-control"
+                                id="content"
+                                placeholder="Enter Blog Body"
+                                v-model="currentBlog.content"
+                                required="required"
+                                rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary m-progress" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                        </form>
+                        </div>
+                    </div>
+                    <div class="loading" v-if="loading===true">Loading&#8230;</div>
+                    </div>
+            </div>
+        </div>
+        <div class="loading" v-if='loading==true'>Loading&#8230;</div>
+    </div>
 {% endblock content %}
+
+{% block javascript %}
+    <script type="text/javascript">
+        new Vue({
+            el: '#starting',
+            delimiters: ['${','}'],
+            data: {
+                blogs: [],
+                loading: false,
+                currentBlog: {},
+                message: null,
+                newBlog: { title: null, content: null },
+            },
+            mounted: function() {
+                this.getBlogs();
+            },
+            methods: {
+                getBlogs: function() {
+                    this.loading = true;
+                    this.$http.get('/api/blog/')
+                        .then((response) => {
+                            this.blogs = response.data;
+                            this.loading = false;
+                        })
+                },
+                getBlog: function(id) {
+                this.loading = true;
+                this.$http.get('/api/blog/' + id + '/')
+                    .then((response) => {
+                        this.currentBlog = response.data;
+                        $("#editBlogModal").modal('show');
+                        this.loading = false;
+                    })
+                    .catch((err) => {
+                        this.loading = true;
+                        console.log(err);
+                    })
+                },
+                addBlog: function() {
+                    this.loading = true;
+                    this.$http.post('/api/blog/', this.newBlog)
+                        .then((response) => {
+                            this.loading = false;
+                            $('#addBlogModal').modal('toggle');
+                            this.getBlogs();
+                        })
+                        .catch((err) => {
+                            this.loading = false;
+                            console.log(err);
+                        })
+                },
+                updateBlog: function(id) {
+                    this.loading = true;
+                    this.$http.put('/api/blog/' + this.currentBlog.id + '/', this.currentBlog)
+                        .then((response) => {
+                            this.loading = false;
+                            this.currentBlog = response.data;
+                            $('#editBlogModal').modal('toggle');
+                            this.getBlogs();
+                        })
+                        .catch((err) => {
+                            this.loading = false;
+                            console.log(err);
+                        })
+                },
+                deleteBlog: function(id) {
+                    this.loading = true;
+                    this.$http.delete('/api/blog/' + id + '/')
+                        .then((response) => {
+                            this.loading = false;
+                            this.getBlogs();
+                        })
+                        .catch((err) => {
+                            this.loading = false;
+                            console.log(err);
+                        })
+                }
+            }
+        });
+    </script>
+{% endblock javascript %}
     
